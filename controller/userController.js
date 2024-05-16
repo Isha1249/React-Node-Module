@@ -4,8 +4,10 @@ const bcrypt = require('bcrypt');
 const { User } = require('../model/user');
 const emailService = require('../services/emailService');
 const crypto = require('crypto');
+const { Vendor } = require('../model/vendor');
 const { signupSchema,verifyOTPSchema,loginSchema,requestForgotPasswordSchema,
 resetPasswordSchema,passwordChangeSchema,editProfileSchema,} = require('../validations/validation');
+const { search } = require('../router/userRoute');
 // User signup route
 const signup= async (req, res) => {
   try {
@@ -346,6 +348,65 @@ const editProfile = async (req, res) => {
         });
     }
 };
+const getVendors = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'customer') {
+      return res.status(403).json({ status: false, message: 'Forbidden: You are not authorized' });
+    }
+    const search= req.query.search; 
+    let query = {};
+    if (search) {
+      query.name = { $regex:search, $options: 'i' };
+    }
+    const vendors = await Vendor.find(query);
+    if (vendors.length === 0) {
+      return res.status(400).json({ status: false, message: 'No vendors found' });
+    }
+    const vendorsWithPhotoURL = vendors.map(vendor => {
+      const photoURL = process.env.BACKEND_BASE_URL + '/uploads/' + vendor.photo;
+      return {
+        ...vendor.toObject(),
+        photoURL,
+      };
+    });
+    res.status(200).json({ status: true, message: 'Vendors retrieved successfully', vendors: vendorsWithPhotoURL });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ status: false, message: 'Server Error' });
+  }
+};
+
+const getProductsByVendorId = async (req, res) => {
+  try {
+    if (!req.user || req.user.role !== 'customer') {
+      return res.status(403).json({ status: false, message: 'Forbidden: You are not authorized' });
+    }
+    const vendorId = req.params.vendorId;
+    const search= req.query.search; 
+    let query = { vendor: vendorId, deletedAt: null };
+    if (search) {
+      query.name = { $regex: search, $options: 'i' }; 
+    }
+    const products = await Product.find(query);
+    if (products.length === 0) {
+      return res.status(404).json({ status: false, message: 'Products not found for this vendor' });
+    }
+    const productsWithPhotoURL = products.map(product => ({
+      ...product.toObject(),
+      photoURL: process.env.BACKEND_BASE_URL + '/uploads/' + product.photo,
+    }));
+    res.status(200).json({
+      status: true,
+      message: 'Products retrieved successfully',
+      products: productsWithPhotoURL,
+    });
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ status: false, message: 'Server Error' });
+  }
+};
+
+
 const getProduct = async (req, res) => {
   try {
       if (!req.user||req.user.role !== 'customer') {
@@ -413,5 +474,5 @@ const getProduct = async (req, res) => {
 };
 
 module.exports = {signup,verifyOTP,login,requestForgotPasswordLink,resetPasswordUsingLink,requestPasswordChange,logout,profile,
-    editProfile, getProduct
+    editProfile,getVendors,getProductsByVendorId , getProduct
 }

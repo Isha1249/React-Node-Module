@@ -21,6 +21,8 @@ router.group("/user", (router) => {
     router.put('/edit-profile',upload.single('photo'),UserController.editProfile); 
    
     //Product
+    router.get('/get-vendors', UserController.getVendors);
+    router.get('/get-products/:vendorId/', UserController.getProductsByVendorId);
     router.get('/get-products',UserController.getProduct);
     router.post('/cart/add-item',CartController.addItem);
     router.put('/cart/remove-quantity/:productId',CartController.decreaseQuantity);

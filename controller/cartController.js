@@ -3,52 +3,103 @@ const {Cart} = require('../model/cart');
 const { User } = require('../model/user');
 const { Product } = require('../model/product');
 const { addItemSchema} = require('../validations/validation');
+// const addItem = async (req, res) => {
+//     try {
+//         const { error } = addItemSchema.validate(req.body); 
+//         if (error) {
+//             return res.status(400).json({ status: false, message: error.details[0].message });
+//         }
+//         const userId = req.user._id; 
+//         const user = await User.findById(userId);
+//         if (!user) {
+//             return res.status(404).json({
+//                 status: false,
+//                 message: 'Account not found.',
+//             });
+//         }
+//         const { productId, quantity } = req.body;
+//         const product = await Product.findById(productId);
+//         if (!product) {
+//             return res.status(404).json({
+//                 status: false,
+//                 message: 'Product not found.',
+//             });
+//         }
+
+//         let cart = await Cart.findOne({ user: userId }).populate('items.product');
+//         if (!cart) {
+//             cart = new Cart({
+//                 user: userId,
+//                 items: [{ product: productId, quantity }]
+//             });
+//         } else {
+//             const existingItemIndex = cart.items.findIndex(item => item.product._id.toString() === productId);
+//             if (existingItemIndex !== -1) {
+//                 cart.items[existingItemIndex].quantity += quantity;
+//             } else {
+//                 cart.items.push({ product: productId, quantity });
+//             }
+//         }
+//         const newItemPrice = product.price * quantity;
+//         cart.totalPrice += newItemPrice;
+//         await cart.save();
+//         res.status(200).json({ status: true, message: 'Item added to cart successfully',cart });
+//     } catch (err) {
+//         console.error(err.message);
+//         res.status(500).json({ status: false, message: 'Server Error' });
+//     }
+// };
+
 const addItem = async (req, res) => {
     try {
-        const { error } = addItemSchema.validate(req.body); 
-        if (error) {
-            return res.status(400).json({ status: false, message: error.details[0].message });
+      const { error } = addItemSchema.validate(req.body); 
+      if (error) {
+        return res.status(400).json({ status: false, message: error.details[0].message });
+      }
+      const userId = req.user._id; 
+      const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          status: false,
+          message: 'Account not found.',
+        });
+      }
+      const { productId, quantity } = req.body;
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({
+          status: false,
+          message: 'Product not found.',
+        });
+      }
+      let cart = await Cart.findOne({ user: userId }).populate('items.product');
+      if (!cart) {
+        cart = new Cart({
+          user: userId,
+          items: [{ product: productId, quantity }],
+          totalPrice: product.price * quantity,
+        });
+      } else {
+        if (cart.items.length > 0 && cart.items[0].product.vendor.toString() !== product.vendor.toString()) {
+          return res.status(400).json({ status: false, message: 'Cannot add items from different vendors to the same cart' });
         }
-        const userId = req.user._id; 
-        const user = await User.findById(userId);
-        if (!user) {
-            return res.status(404).json({
-                status: false,
-                message: 'Account not found.',
-            });
-        }
-        const { productId, quantity } = req.body;
-        const product = await Product.findById(productId);
-        if (!product) {
-            return res.status(404).json({
-                status: false,
-                message: 'Product not found.',
-            });
-        }
-
-        let cart = await Cart.findOne({ user: userId }).populate('items.product');
-        if (!cart) {
-            cart = new Cart({
-                user: userId,
-                items: [{ product: productId, quantity }]
-            });
+        const existingItemIndex = cart.items.findIndex(item => item.product._id.toString() === productId);
+        if (existingItemIndex !== -1) {
+          cart.items[existingItemIndex].quantity += quantity;
         } else {
-            const existingItemIndex = cart.items.findIndex(item => item.product._id.toString() === productId);
-            if (existingItemIndex !== -1) {
-                cart.items[existingItemIndex].quantity += quantity;
-            } else {
-                cart.items.push({ product: productId, quantity });
-            }
+          cart.items.push({ product: productId, quantity });
         }
         const newItemPrice = product.price * quantity;
         cart.totalPrice += newItemPrice;
-        await cart.save();
-        res.status(200).json({ status: true, message: 'Item added to cart successfully',cart });
+      }
+      await cart.save();
+      res.status(200).json({ status: true, message: 'Item added to cart successfully', cart });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).json({ status: false, message: 'Server Error' });
+      console.error(err.message);
+      res.status(500).json({ status: false, message: 'Server Error' });
     }
 };
+  
 const decreaseQuantity = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -69,6 +120,14 @@ const decreaseQuantity = async (req, res) => {
                 message: 'Item not found in cart.',
             });
         }
+        const selectedVendor = cart.items[existingItemIndex].product.vendor.toString();
+        const itemsFromOtherVendors = cart.items.filter(item => item.product.vendor.toString() !== selectedVendor);
+        if (itemsFromOtherVendors.length > 0) {
+            return res.status(400).json({
+                status: false,
+                message: 'Cannot decrease quantity or remove items from different vendors in the same cart.',
+            });
+        }
         cart.items[existingItemIndex].quantity--;
         if (cart.items[existingItemIndex].quantity === 0) {
             cart.items.splice(existingItemIndex, 1);
@@ -77,8 +136,6 @@ const decreaseQuantity = async (req, res) => {
             const itemPrice = item.quantity * item.product.price;
             return total + itemPrice;
         }, 0);
-
-        // If cart becomes empty, delete the cart record
         if (cart.items.length === 0) {
             await Cart.findByIdAndDelete(cart._id);
             return res.status(200).json({ status: true, message: 'Item quantity decreased successfully and cart deleted', totalPrice: 0 });
