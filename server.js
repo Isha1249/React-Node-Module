@@ -3,7 +3,6 @@ const UserRoute = require('./router/userRoute.js');
 const VendorRoute = require('./router/vendorRoute.js')
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
 mongoose.Promise = global.Promise;
