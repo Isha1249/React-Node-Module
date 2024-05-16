@@ -73,9 +73,16 @@ const newProductSchema = Joi.object({
   quantity: Joi.number().integer().min(1).optional(),
   photo: Joi.string().optional(), 
 });
+//Cart
+const addItemSchema = Joi.object({
+  productId: Joi.string().required(),
+  quantity: Joi.number().integer().min(1).required(),
+});
+
 module.exports = {
   signupSchema,verifyOTPSchema,loginSchema,requestForgotPasswordSchema,resetPasswordSchema,passwordChangeSchema,
   editProfileSchema,
   vendorSignupSchema,editVendorProfileSchema,
-  newProductSchema
+  newProductSchema,
+  addItemSchema
 };

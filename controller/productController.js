@@ -1,4 +1,3 @@
-const { Vendor } = require('../model/vendor');
 const { Product } = require('../model/product');
 const { newProductSchema} = require('../validations/validation');
 const addProduct = async (req, res) => {
@@ -36,10 +35,9 @@ const getProduct= async (req, res) => {
             return res.status(403).json({ status:false,message: 'Forbidden: Only vendor can get product' });
         }
         let products;
-        if (req.user.role === 'vendor') {
-            products = await Product.find({ vendor: req.user.id,deletedAt:null }).populate('vendor', ['name', 'address', 'photo']);
-        } else {
-            products = await Product.find().populate('vendor', ['name', 'address', 'photo']);
+        products = await Product.find({ vendor: req.user.id,deletedAt:null }).populate('vendor', ['name', 'address', 'photo']);
+        if (products.length === 0) {
+            return res.status(404).json({ status: false, message: 'No products found',products });
         }
         const productsWithPhotoURL = products.map(product => {
             const vendor = product.vendor.toObject();

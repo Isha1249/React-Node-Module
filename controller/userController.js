@@ -1,4 +1,5 @@
 const express = require('express');
+const { Product } = require('../model/product');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { User } = require('../model/user');
@@ -346,7 +347,72 @@ const editProfile = async (req, res) => {
         });
     }
 };
-  
+const getProduct = async (req, res) => {
+  try {
+      if (!req.user||req.user.role !== 'customer') {
+        return res.status(403).json({ status:false,message: 'Forbidden: You are not authorized' });
+      }
+      const {search,searchField} = req.query;
+      let query = {deletedAt:null};
+      if (search && searchField) {
+        const searchTerms = search.split(' ');
+        const searchFields = searchField.split(','); 
+        const searchPatterns = searchTerms.map((term) => new RegExp(term, 'i'));
+        query['$or'] = searchFields.flatMap((field) =>
+          searchPatterns.map((pattern) => ({
+            [field.trim()]: { $regex: pattern },
+          }))
+        );
+      }
+      let products = await Product.aggregate([
+        {
+            $lookup: {
+                from: 'vendors',
+                localField: 'vendor',
+                foreignField: '_id',
+                as: 'vendor'
+            }
+        },
+        { $unwind: '$vendor' },
+        { $match: query },
+        {
+            $project: {
+                _id: 1,
+                name: 1,
+                price: 1,
+                quantity: 1,
+                photo: 1,
+                vendor: {
+                    _id: '$vendor._id',
+                    name: '$vendor.name',
+                    address: '$vendor.address',
+                    photo: {
+                        $concat: [process.env.BACKEND_BASE_URL + '/uploads/', '$vendor.photo']
+                    }
+                }
+            }
+        }
+      ]);
+      if (products.length === 0) {
+        return res.status(404).json({ status: false, message: 'No products found', products });
+      }
+      const productsWithPhotoURL = products.map(product => {
+          return {
+              ...product,
+              photo: process.env.BACKEND_BASE_URL + '/uploads/' + product.photo
+          };
+      });
+      res.status(200).json({
+          status: true,
+          message: "Product Details",
+          products: productsWithPhotoURL
+      });
+  } catch (err) {
+      console.error(err.message);
+      res.status(500).json({ status: false, message: 'Server Error' });
+  }
+};
+
 module.exports = {signup,verifyOTP,login,requestForgotPasswordLink,resetPasswordUsingLink,requestPasswordChange,logout,profile,
-    editProfile
+    editProfile, getProduct
 }
