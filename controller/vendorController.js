@@ -1,4 +1,3 @@
-const express = require('express');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { Vendor } = require('../model/vendor');
@@ -97,9 +96,6 @@ const login = async (req, res) => {
         if (!vendor) {
           return res.status(401).json({status:false, message: "Account not found." });
         }
-        // if (user.role === 'vendor' || user.isVendor) {
-        //   return res.status(401).json({status:false, message: "Unauthorized: Vendors should log in through the vendor login Portal." });
-        // }
         const passwordMatch = await bcrypt.compare(password, vendor.password);
         if (!passwordMatch) {
           return res.status(401).json({status:false, message: "Incorrect password. Please try again or reset your password" });

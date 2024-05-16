@@ -26,7 +26,7 @@ const addItem = async (req, res) => {
             });
         }
 
-        let cart = await Cart.findOne({ user: userId });
+        let cart = await Cart.findOne({ user: userId }).populate('items.product');
         if (!cart) {
             cart = new Cart({
                 user: userId,
@@ -40,12 +40,9 @@ const addItem = async (req, res) => {
                 cart.items.push({ product: productId, quantity });
             }
         }
-        cart.totalPrice = cart.items.reduce((total, item) => {
-            const itemPrice = item.quantity * product.price;
-            return total + itemPrice;
-        }, 0);
+        const newItemPrice = product.price * quantity;
+        cart.totalPrice += newItemPrice;
         await cart.save();
-       
         res.status(200).json({ status: true, message: 'Item added to cart successfully',cart });
     } catch (err) {
         console.error(err.message);
@@ -72,16 +69,10 @@ const decreaseQuantity = async (req, res) => {
                 message: 'Item not found in cart.',
             });
         }
-
-        // Decrease quantity
         cart.items[existingItemIndex].quantity--;
-
-        // If quantity becomes zero, remove the item from cart
         if (cart.items[existingItemIndex].quantity === 0) {
             cart.items.splice(existingItemIndex, 1);
         }
-
-        // Recalculate total price
         cart.totalPrice = cart.items.reduce((total, item) => {
             const itemPrice = item.quantity * item.product.price;
             return total + itemPrice;
@@ -92,9 +83,7 @@ const decreaseQuantity = async (req, res) => {
             await Cart.findByIdAndDelete(cart._id);
             return res.status(200).json({ status: true, message: 'Item quantity decreased successfully and cart deleted', totalPrice: 0 });
         }
-
         await cart.save();
-
         res.status(200).json({ status: true, message: 'Item quantity decreased successfully', totalPrice: cart.totalPrice });
     } catch (err) {
         console.error(err.message);
@@ -104,8 +93,6 @@ const decreaseQuantity = async (req, res) => {
 const getCart = async (req, res) => {
     try {
         const userId = req.user._id;
-
-        // Find the user's cart and populate the user, product, and vendor details
         const cart = await Cart.findOne({ user: userId })
             .populate({
                 path: 'user',
@@ -126,8 +113,6 @@ const getCart = async (req, res) => {
                 message: 'Cart not found.',
             });
         }
-
-        // Map product and vendor photo URLs
         const populatedCart = {
             ...cart.toObject(),
             items: cart.items.map(item => {
@@ -151,6 +136,4 @@ const getCart = async (req, res) => {
         res.status(500).json({ status: false, message: 'Server Error' });
     }
 };
-
-
 module.exports = {addItem,decreaseQuantity,getCart};

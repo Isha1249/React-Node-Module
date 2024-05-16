@@ -12,9 +12,7 @@ router.group("/vendor", (router) => {
     // router.post('/forgot-password/request-link',UserController.requestForgotPasswordLink);
     // router.post('/forgot-password/reset/:token',UserController.resetPasswordUsingLink);
 
-
     router.use(authMiddleware.verifyToken);
-    // router.post('/change-password',UserController.requestPasswordChange);
     router.post('/logout',VendorController.logout);
     router.get('/profile',VendorController.profile);
     router.put('/edit-profile',upload.single('photo'),VendorController.editProfile); 
@@ -22,7 +20,8 @@ router.group("/vendor", (router) => {
     //Product
     router.post('/add-product',upload.single('photo'),ProductController.addProduct);
     router.get('/get-products',ProductController.getProduct);
+    router.put('/edit-product/:productId',upload.single('photo'),ProductController.editProduct);
+    router.delete('/delete-product/:productId',ProductController.deleteProduct);
 
-    
 });
 module.exports = router;

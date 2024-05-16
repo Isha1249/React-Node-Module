@@ -1,4 +1,3 @@
-const express = require('express');
 const { Product } = require('../model/product');
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
@@ -184,7 +183,7 @@ const requestForgotPasswordLink = async (req, res) => {
     }
 };
 function sendResetPasswordLinkByEmail(email, resetToken) {
-    const resetLink = `${process.env.BACKEND_BASE_URL}/user/forgot-password/reset/${resetToken}`;
+    const resetLink = `${process.env.BASE_URL}/reset-password/${resetToken}`;
     const mailOptions = {
       from: `"Zomato Admin" <${process.env.GMAIL_EMAIL}>`,
       to: email,
