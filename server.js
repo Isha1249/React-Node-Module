@@ -16,8 +16,8 @@ mongoose.connect(process.env.DB_URI, {
 });
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/', express.static("./uploads"));
-
+//app.use('/', express.static("./uploads"));
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json())
 // app.use(cors());
 const corsOptions = {
