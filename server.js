@@ -2,6 +2,7 @@ require('dotenv').config();
 const UserRoute = require('./router/userRoute.js');
 const VendorRoute = require('./router/vendorRoute.js')
 const express = require('express');
+const path = require('path');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -16,10 +17,7 @@ mongoose.connect(process.env.DB_URI, {
 });
 const app = express();
 app.use(bodyParser.urlencoded({ extended: true }));
-app.use('/', express.static("./uploads"));
-// app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(bodyParser.json())
-// app.use(cors());
 const corsOptions = {
     origin: '*', 
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
@@ -27,6 +25,8 @@ const corsOptions = {
   };
    
 app.use(cors(corsOptions));
+const uploadDir = path.join(__dirname, 'uploads');
+app.use('/uploads', express.static(uploadDir));
 app.use('/',UserRoute);
 app.use('/',VendorRoute);
 
