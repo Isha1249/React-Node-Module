@@ -47,7 +47,7 @@ const signup= async (req, res) => {
 };
 function sendOTP(email, otp) {
     const mailOptions = {
-        from:`"Zomato Admin" <${process.env.GMAIL_EMAIL}>`,
+        from:`"Test Demo" <${process.env.GMAIL_EMAIL}>`,
         to:email,
         subject: 'Email Verification',
         text: `Your OTP for email verification is: ${otp}`,

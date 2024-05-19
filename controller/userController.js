@@ -7,7 +7,6 @@ const crypto = require('crypto');
 const { Vendor } = require('../model/vendor');
 const { signupSchema,verifyOTPSchema,loginSchema,requestForgotPasswordSchema,
 resetPasswordSchema,passwordChangeSchema,editProfileSchema,} = require('../validations/validation');
-const { search } = require('../router/userRoute');
 // User signup route
 const signup= async (req, res) => {
   try {
@@ -53,7 +52,7 @@ const signup= async (req, res) => {
 };
 function sendOTP(email, otp) {
     const mailOptions = {
-        from:`"Zomato Admin" <${process.env.GMAIL_EMAIL}>`,
+        from:`"Test Demo" <${process.env.GMAIL_EMAIL}>`,
         to:email,
         subject: 'Email Verification',
         text: `Your OTP for email verification is: ${otp}`,
@@ -187,7 +186,7 @@ const requestForgotPasswordLink = async (req, res) => {
 function sendResetPasswordLinkByEmail(email, resetToken) {
     const resetLink = `${process.env.BASE_URL}/reset-password/${resetToken}`;
     const mailOptions = {
-      from: `"Zomato Admin" <${process.env.GMAIL_EMAIL}>`,
+      from: `"Test Demo" <${process.env.GMAIL_EMAIL}>`,
       to: email,
       subject: 'Reset Password Link',
       text: `Click on the following link to reset your password: ${resetLink}`,
@@ -259,7 +258,7 @@ const requestPasswordChange = async (req, res) => {
 };
 const sendPasswordChangeConfirmationEmail = (email) => {
   const mailOptions = {
-    from: `"Zomato Admin" <${process.env.GMAIL_EMAIL}>`,
+    from: `"Test Demo" <${process.env.GMAIL_EMAIL}>`,
     to: email,
     subject: 'Password Change Successfully',
     text: 'Your password has been successfully change.',
